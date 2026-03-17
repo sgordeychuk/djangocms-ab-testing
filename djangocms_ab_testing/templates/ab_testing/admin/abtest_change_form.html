@@ -1,0 +1,441 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if has_dashboard %}
+<style>
+  .ab-dashboard { margin: 20px 0; }
+  .ab-dashboard h2 { margin-bottom: 15px; font-size: 18px; }
+  .ab-section-title {
+    margin: 20px 0 12px; padding: 6px 10px; font-size: 14px;
+    background: var(--darkened-bg, #f0f0f0); color: var(--body-fg, #333);
+    border-left: 3px solid var(--primary, #417690); border-radius: 2px;
+  }
+  .ab-filter-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: end;
+    padding: 15px; background: var(--body-bg, #f8f9fa); border: 1px solid var(--hairline-color, #ddd);
+    border-radius: 4px; margin-bottom: 20px;
+  }
+  .ab-filter-bar label {
+    display: block; font-size: 11px; font-weight: bold; margin-bottom: 3px;
+    color: var(--body-quiet-color, #666);
+  }
+  .ab-filter-bar input, .ab-filter-bar select {
+    padding: 6px 8px; border: 1px solid var(--border-color, #ccc); border-radius: 4px;
+    font-size: 13px; background: var(--darkened-bg, #fff); color: var(--body-fg, #333);
+  }
+  .ab-filter-bar button {
+    padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px;
+    cursor: pointer; font-weight: bold;
+  }
+  .ab-btn-apply { background: var(--primary, #417690); color: #fff; }
+  .ab-btn-apply:hover { opacity: 0.85; }
+  .ab-btn-reset { background: var(--button-bg, #e0e0e0); color: var(--body-fg, #333); }
+  .ab-summary-cards {
+    display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .ab-card {
+    flex: 1; min-width: 140px; padding: 15px; background: var(--darkened-bg, #fff);
+    border: 1px solid var(--hairline-color, #ddd); border-radius: 4px; text-align: center;
+  }
+  .ab-card-value { font-size: 28px; font-weight: bold; color: var(--link-fg, #417690); }
+  .ab-card-label { font-size: 12px; color: var(--body-quiet-color, #666); margin-top: 4px; }
+  .ab-stats-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 20px;
+    background: var(--darkened-bg, #fff);
+  }
+  .ab-stats-table th, .ab-stats-table td {
+    padding: 10px 14px; border: 1px solid var(--hairline-color, #ddd);
+    text-align: left; font-size: 13px; color: var(--body-fg, #333);
+  }
+  .ab-dashboard .ab-stats-table thead th {
+    background: #417690; color: #fff;
+    font-weight: bold;
+  }
+  .ab-stats-table tr:nth-child(even) { background: var(--body-bg, #f8f9fa); }
+  .ab-charts { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .ab-chart-container {
+    flex: 1; min-width: 400px; padding: 15px; background: var(--darkened-bg, #fff);
+    border: 1px solid var(--hairline-color, #ddd); border-radius: 4px;
+  }
+  .ab-chart-container h3 {
+    margin: 0 0 10px; font-size: 13px; font-weight: bold;
+    color: var(--body-fg, #333);
+  }
+  .ab-chart-container.ab-chart-half { flex: 0 1 calc(50% - 10px); min-width: 0; box-sizing: border-box; }
+  .ab-export-link { display: inline-block; margin-top: 10px; }
+</style>
+
+<div class="ab-dashboard">
+  <h2>{% trans "Dashboard" %}</h2>
+
+  <div class="ab-filter-bar">
+    <div>
+      <label for="ab-date-from">Date from</label>
+      <input type="date" id="ab-date-from">
+    </div>
+    <div>
+      <label for="ab-date-to">Date to</label>
+      <input type="date" id="ab-date-to">
+    </div>
+    <div>
+      <label for="ab-device-type">Device</label>
+      <select id="ab-device-type"><option value="">All</option></select>
+    </div>
+    <div>
+      <label for="ab-browser">Browser</label>
+      <select id="ab-browser"><option value="">All</option></select>
+    </div>
+    <div>
+      <label for="ab-os">OS</label>
+      <select id="ab-os"><option value="">All</option></select>
+    </div>
+    <div>
+      <label for="ab-screen-size">Screen size</label>
+      <select id="ab-screen-size"><option value="">All</option></select>
+    </div>
+    <div>
+      <button type="button" class="ab-btn-apply" id="ab-apply-filters">Apply</button>
+      <button type="button" class="ab-btn-reset" id="ab-reset-filters">Reset</button>
+    </div>
+  </div>
+
+  <div class="ab-summary-cards">
+    <div class="ab-card">
+      <div class="ab-card-value" id="ab-total-events">-</div>
+      <div class="ab-card-label">Total Events</div>
+    </div>
+    <div class="ab-card">
+      <div class="ab-card-value" id="ab-total-sessions">-</div>
+      <div class="ab-card-label">Unique Sessions</div>
+    </div>
+    <div class="ab-card">
+      <div class="ab-card-value" id="ab-counter-value">{{ counter_value }}</div>
+      <div class="ab-card-label">Counter</div>
+    </div>
+  </div>
+
+  <table class="ab-stats-table">
+    <thead>
+      <tr>
+        <th>Variant</th>
+        <th>Unique Sessions</th>
+        <th>Opens</th>
+        <th>Requests</th>
+        <th>Closes</th>
+        <th>Conv. Rate</th>
+      </tr>
+    </thead>
+    <tbody id="ab-stats-tbody">
+      <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="ab-section-title">Trends</h3>
+  <div class="ab-charts">
+    <div class="ab-chart-container">
+      <h3>Daily Opens by Variant</h3>
+      <canvas id="ab-line-chart"></canvas>
+    </div>
+    <div class="ab-chart-container">
+      <h3>Conversion Rate by Variant</h3>
+      <canvas id="ab-bar-chart"></canvas>
+    </div>
+  </div>
+  <div class="ab-charts">
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Actions by Variant (Opens / Requests / Closes)</h3>
+      <canvas id="ab-actions-chart"></canvas>
+    </div>
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Daily Conversion Rate by Variant</h3>
+      <canvas id="ab-conv-line-chart"></canvas>
+    </div>
+  </div>
+
+  <h3 class="ab-section-title">Distribution by Variant</h3>
+  <div class="ab-charts">
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Device Type</h3>
+      <canvas id="ab-dist-device"></canvas>
+    </div>
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Browser</h3>
+      <canvas id="ab-dist-browser"></canvas>
+    </div>
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Operating System</h3>
+      <canvas id="ab-dist-os"></canvas>
+    </div>
+    <div class="ab-chart-container ab-chart-half">
+      <h3>Screen Size</h3>
+      <canvas id="ab-dist-screen"></canvas>
+    </div>
+  </div>
+
+  <a href="{% url 'admin:djangocms_ab_testing_abevent_changelist' %}" class="ab-export-link">
+    Export Events (CSV) &rarr;
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  var COLORS = ['#417690', '#ba2121', '#309030', '#e67e22', '#8e44ad', '#16a085'];
+  var dataUrl = '{{ dashboard_data_url }}';
+  var charts = {};
+
+  // Detect theme text/grid colors for Chart.js
+  var rootStyle = getComputedStyle(document.documentElement);
+  var textColor = rootStyle.getPropertyValue('--body-fg').trim() || '#333';
+  var gridColor = rootStyle.getPropertyValue('--hairline-color').trim() || '#ddd';
+
+  // Set Chart.js global defaults for dark mode support
+  Chart.defaults.color = textColor;
+  Chart.defaults.borderColor = gridColor;
+  Chart.defaults.scales.linear = Chart.defaults.scales.linear || {};
+  Chart.defaults.plugins.legend.labels.color = textColor;
+
+  function destroyChart(key) {
+    if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+  }
+
+  function createCell(text, bold) {
+    var td = document.createElement('td');
+    if (bold) {
+      var b = document.createElement('strong');
+      b.textContent = text;
+      td.appendChild(b);
+    } else {
+      td.textContent = text;
+    }
+    return td;
+  }
+
+  function renderGroupedBar(canvasId, chartKey, distData) {
+    destroyChart(chartKey);
+    var ctx = document.getElementById(canvasId).getContext('2d');
+    var variants = Object.keys(distData.datasets);
+    charts[chartKey] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: distData.labels,
+        datasets: variants.map(function(v, i) {
+          return {
+            label: 'Variant ' + v,
+            data: distData.datasets[v],
+            backgroundColor: COLORS[i % COLORS.length] + 'cc',
+            borderColor: COLORS[i % COLORS.length],
+            borderWidth: 1,
+          };
+        }),
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { position: 'top' } },
+      },
+    });
+  }
+
+  function renderDashboard(data) {
+    document.getElementById('ab-total-events').textContent = data.total_events;
+    document.getElementById('ab-total-sessions').textContent = data.total_sessions;
+
+    var tbody = document.getElementById('ab-stats-tbody');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    if (!data.variant_stats.length) {
+      var emptyRow = document.createElement('tr');
+      var emptyCell = document.createElement('td');
+      emptyCell.colSpan = 6;
+      emptyCell.style.textAlign = 'center';
+      emptyCell.textContent = 'No data';
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    } else {
+      data.variant_stats.forEach(function(s) {
+        var tr = document.createElement('tr');
+        tr.appendChild(createCell(s.variant, true));
+        tr.appendChild(createCell(String(s.unique_sessions), false));
+        tr.appendChild(createCell(String(s.opens), false));
+        tr.appendChild(createCell(String(s.requests), false));
+        tr.appendChild(createCell(String(s.closes), false));
+        tr.appendChild(createCell(s.conversion_rate + '%', true));
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Line chart - daily opens
+    destroyChart('line');
+    var lineCtx = document.getElementById('ab-line-chart').getContext('2d');
+    var variants = Object.keys(data.timeseries.datasets);
+    charts['line'] = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: data.timeseries.labels,
+        datasets: variants.map(function(v, i) {
+          return {
+            label: 'Variant ' + v,
+            data: data.timeseries.datasets[v],
+            borderColor: COLORS[i % COLORS.length],
+            backgroundColor: COLORS[i % COLORS.length] + '22',
+            tension: 0.3,
+            fill: true,
+          };
+        }),
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      },
+    });
+
+    // Bar chart - conversion rate
+    destroyChart('convBar');
+    var barCtx = document.getElementById('ab-bar-chart').getContext('2d');
+    charts['convBar'] = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: data.variant_stats.map(function(s) { return 'Variant ' + s.variant; }),
+        datasets: [{
+          label: 'Conversion Rate (%)',
+          data: data.variant_stats.map(function(s) { return s.conversion_rate; }),
+          backgroundColor: data.variant_stats.map(function(_, i) { return COLORS[i % COLORS.length]; }),
+        }],
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } },
+      },
+    });
+
+    // Actions by variant chart
+    destroyChart('actions');
+    var actCtx = document.getElementById('ab-actions-chart').getContext('2d');
+    var ACTION_COLORS = { opens: '#417690', requests: '#309030', closes: '#ba2121' };
+    charts['actions'] = new Chart(actCtx, {
+      type: 'bar',
+      data: {
+        labels: data.variant_stats.map(function(s) { return 'Variant ' + s.variant; }),
+        datasets: [
+          {
+            label: 'Opens',
+            data: data.variant_stats.map(function(s) { return s.opens; }),
+            backgroundColor: ACTION_COLORS.opens,
+          },
+          {
+            label: 'Requests',
+            data: data.variant_stats.map(function(s) { return s.requests; }),
+            backgroundColor: ACTION_COLORS.requests,
+          },
+          {
+            label: 'Closes',
+            data: data.variant_stats.map(function(s) { return s.closes; }),
+            backgroundColor: ACTION_COLORS.closes,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { position: 'top' } },
+      },
+    });
+
+    // Daily conversion rate line chart
+    destroyChart('convLine');
+    if (data.conv_timeseries) {
+      var convLineCtx = document.getElementById('ab-conv-line-chart').getContext('2d');
+      var convVariants = Object.keys(data.conv_timeseries.datasets);
+      charts['convLine'] = new Chart(convLineCtx, {
+        type: 'line',
+        data: {
+          labels: data.conv_timeseries.labels,
+          datasets: convVariants.map(function(v, i) {
+            return {
+              label: 'Variant ' + v,
+              data: data.conv_timeseries.datasets[v],
+              borderColor: COLORS[i % COLORS.length],
+              backgroundColor: COLORS[i % COLORS.length] + '22',
+              tension: 0.3,
+              fill: false,
+            };
+          }),
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: '%' } },
+          },
+        },
+      });
+    }
+
+    // Distribution charts
+    if (data.distributions) {
+      renderGroupedBar('ab-dist-device', 'distDevice', data.distributions.device);
+      renderGroupedBar('ab-dist-browser', 'distBrowser', data.distributions.browser);
+      renderGroupedBar('ab-dist-os', 'distOs', data.distributions.os);
+      renderGroupedBar('ab-dist-screen', 'distScreen', data.distributions.screen_size);
+    }
+
+    // Populate filter dropdowns
+    if (data.filter_options) {
+      populateSelect('ab-device-type', data.filter_options.device_types);
+      populateSelect('ab-browser', data.filter_options.browsers);
+      populateSelect('ab-os', data.filter_options.os_list);
+      populateSelect('ab-screen-size', data.filter_options.screen_sizes);
+    }
+  }
+
+  function populateSelect(id, options) {
+    var el = document.getElementById(id);
+    var current = el.value;
+    while (el.options.length > 1) el.remove(1);
+    options.forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      if (opt === current) o.selected = true;
+      el.appendChild(o);
+    });
+  }
+
+  function fetchData() {
+    var params = new URLSearchParams();
+    var fields = {
+      'date_from': 'ab-date-from',
+      'date_to': 'ab-date-to',
+      'device_type': 'ab-device-type',
+      'browser': 'ab-browser',
+      'os': 'ab-os',
+      'screen_size': 'ab-screen-size'
+    };
+    for (var key in fields) {
+      var val = document.getElementById(fields[key]).value;
+      if (val) params.set(key, val);
+    }
+
+    fetch(dataUrl + '?' + params.toString())
+      .then(function(r) { return r.json(); })
+      .then(renderDashboard)
+      .catch(function(err) { console.error('Dashboard fetch error:', err); });
+  }
+
+  var initialStats = {{ initial_stats|safe }};
+  renderDashboard(initialStats);
+
+  document.getElementById('ab-apply-filters').addEventListener('click', fetchData);
+  document.getElementById('ab-reset-filters').addEventListener('click', function() {
+    ['ab-date-from', 'ab-date-to', 'ab-device-type', 'ab-browser', 'ab-os', 'ab-screen-size'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    fetchData();
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

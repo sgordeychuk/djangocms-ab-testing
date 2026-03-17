@@ -1,0 +1,10 @@
+{% load cms_tags %}
+{% if active_variant %}
+  <div class="ab-test-container"
+       {% if ab_test_active %}
+         data-ab-test="{{ test_name }}"
+         data-ab-variant="{{ variant_key }}"
+       {% endif %}>
+    {% render_plugin active_variant %}
+  </div>
+{% endif %}

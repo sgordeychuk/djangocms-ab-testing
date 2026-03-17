@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "djangocms-ab-testing"
+version = "0.1.0"
+description = "A/B testing plugin for django CMS with round-robin assignment, cookie-based persistence, event tracking, and an admin dashboard."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Sergei Gordeichuk" },
+]
+keywords = [
+    "django-cms",
+    "ab-testing",
+    "split-testing",
+    "conversion-optimization",
+    "cms-plugin",
+    "django",
+    "a-b-testing",
+    "multivariate-testing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django CMS",
+    "Framework :: Django CMS :: 3.11",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "django>=3.2",
+    "django-cms>=3.11",
+    "django-import-export>=3.0",
+    "user-agents>=2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sgordeychuk/djangocms-ab-testing"
+Documentation = "https://github.com/sgordeychuk/djangocms-ab-testing#readme"
+Repository = "https://github.com/sgordeychuk/djangocms-ab-testing"
+Issues = "https://github.com/sgordeychuk/djangocms-ab-testing/issues"
+
+[tool.setuptools.packages.find]
+include = ["djangocms_ab_testing*"]
