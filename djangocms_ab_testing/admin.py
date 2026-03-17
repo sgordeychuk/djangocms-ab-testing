@@ -3,7 +3,8 @@ from collections import Counter
 from datetime import timedelta
 
 from django.contrib import admin
-from django.db.models import Count, Q
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.urls import path, reverse
 from django.utils import timezone
@@ -150,7 +151,7 @@ class ABTestAdmin(admin.ModelAdmin):
         for variant in variants:
             vqs = qs.filter(variant=variant, action='opened')
             daily = (
-                vqs.extra(select={'day': "DATE(created_at)"})
+                vqs.annotate(day=TruncDate('created_at'))
                 .values('day')
                 .annotate(count=Count('id'))
                 .order_by('day')
@@ -175,7 +176,7 @@ class ABTestAdmin(admin.ModelAdmin):
             vqs = qs.filter(variant=variant)
             opens_by_day = dict(
                 vqs.filter(action='opened')
-                .extra(select={'day': "DATE(created_at)"})
+                .annotate(day=TruncDate('created_at'))
                 .values('day')
                 .annotate(count=Count('id'))
                 .order_by('day')
@@ -183,7 +184,7 @@ class ABTestAdmin(admin.ModelAdmin):
             )
             reqs_by_day = dict(
                 vqs.filter(action='requested')
-                .extra(select={'day': "DATE(created_at)"})
+                .annotate(day=TruncDate('created_at'))
                 .values('day')
                 .annotate(count=Count('id'))
                 .order_by('day')

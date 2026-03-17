@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "djangocms-ab-testing"
-version = "0.1.0"
+version = "0.2.0"
 description = "A/B testing plugin for django CMS with round-robin assignment, cookie-based persistence, event tracking, and an admin dashboard."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Sergei Gordeichuk" },
 ]
@@ -26,17 +26,23 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Framework :: Django CMS",
     "Framework :: Django CMS :: 3.11",
+    "Framework :: Django CMS :: 4.1",
+    "Framework :: Django CMS :: 4.2",
+    "Framework :: Django CMS :: 5.0",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "django>=3.2",
+    "django>=4.2",
     "django-cms>=3.11",
     "django-import-export>=3.0",
     "user-agents>=2.0",
